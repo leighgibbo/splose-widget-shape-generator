@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>splose widget shape generator</title>
+<style>
+  :root {
+    --bg: #f7f5ef;
+    --panel: #ffffff;
+    --ink: #1c1b19;
+    --muted: #6b6960;
+    --faint: #a8a59c;
+    --line: #e4e1d8;
+    --brand: #a78fe0;
+    --brand-deep: #3c3489;
+    --radius: 14px;
+    --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 24px 80px; }
+  header { margin-bottom: 32px; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); font-size: 15px; max-width: 62ch; }
+  .layout { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 28px; align-items: start; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+  .stage { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); min-height: 420px; display: flex; align-items: center; justify-content: center; padding: 32px; }
+  .stage svg { width: 100%; height: auto; max-height: 460px; display: block; }
+  .panel { font-size: 13px; }
+  .group-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); margin: 18px 0 10px; }
+  .group-label:first-child { margin-top: 0; }
+  .row { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+  .row label { width: 90px; flex-shrink: 0; color: var(--muted); }
+  .row input[type=range] { flex: 1; accent-color: var(--brand); min-width: 0; }
+  .row .val { width: 46px; text-align: right; flex-shrink: 0; font-family: var(--mono); font-size: 12px; }
+  .readout { margin-top: 16px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; font-size: 12px; color: var(--muted); }
+  .readout b { color: var(--ink); font-family: var(--mono); font-weight: 500; }
+  .actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+  button { font-family: var(--sans); font-size: 13px; font-weight: 500; padding: 9px 14px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; transition: background .15s, transform .05s; }
+  button:hover { background: #faf8f3; }
+  button:active { transform: scale(.98); }
+  button.primary { background: var(--brand-deep); color: #fff; border-color: var(--brand-deep); }
+  button.primary:hover { background: #322b73; }
+  .code-block { margin-top: 36px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .code-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .code-head h2 { font-size: 14px; font-weight: 600; margin: 0; }
+  .code-head .copy { font-size: 12px; padding: 6px 11px; }
+  pre { margin: 0; padding: 18px 16px; background: #fbfaf6; font-family: var(--mono); font-size: 12.5px; line-height: 1.65; overflow-x: auto; color: #2c2a26; }
+  .hint { color: var(--muted); font-size: 12.5px; margin: 18px 0 0; }
+  .splose-widget-shape { fill: url(#splose-widget-shape-gradient); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>splose widget shape generator</h1>
+    <p>A body rectangle with two independent diagonal kicks. Each kick can be dialed to zero &mdash; set both to zero for a plain rounded rectangle, or one to zero for a single chamfer. Every angled edge is locked to the chosen angle; only corners are rounded. Fully responsive via <code>viewBox</code>.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage">
+      <svg id="svg" viewBox="0 0 460 380" role="img" aria-label="Generated brand shape"></svg>
+    </div>
+
+    <div class="panel">
+      <div class="group-label">Body</div>
+      <div class="row"><label>Base height</label><input type="range" id="bh" min="60" max="240" step="1" value="110"><span class="val" id="bh-v"></span></div>
+
+      <div class="group-label">Top kick</div>
+      <div class="row"><label>Amount</label><input type="range" id="dt" min="0" max="200" step="1" value="125"><span class="val" id="dt-v"></span></div>
+      <div class="row"><label>Position</label><input type="range" id="tp" min="5" max="95" step="1" value="22"><span class="val" id="tp-v"></span></div>
+
+      <div class="group-label">Bottom kick</div>
+      <div class="row"><label>Amount</label><input type="range" id="db" min="0" max="200" step="1" value="65"><span class="val" id="db-v"></span></div>
+      <div class="row"><label>Position</label><input type="range" id="bp" min="5" max="95" step="1" value="78"><span class="val" id="bp-v"></span></div>
+
+      <div class="group-label">Style</div>
+      <div class="row"><label>Corner radius</label><input type="range" id="er" min="0" max="40" step="1" value="14"><span class="val" id="er-v"></span></div>
+      <div class="row"><label>Angle</label><input type="range" id="ang" min="20" max="80" step="1" value="50"><span class="val" id="ang-v"></span></div>
+      <div class="row"><label>Guides</label><input type="range" id="gd" min="0" max="1" step="1" value="0"><span class="val" id="gd-v"></span></div>
+
+      <div class="readout" id="readout"></div>
+
+      <div class="actions">
+        <button class="primary" id="copy-d">Copy path d</button>
+        <button id="copy-svg">Copy full SVG</button>
+        <button id="reset">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-head">
+      <h2>Reusable function</h2>
+      <button class="copy" id="copy-fn">Copy</button>
+    </div>
+    <pre id="fn-src"></pre>
+  </div>
+
+  <p class="hint">Call <code>brandShapePath(opts)</code> for the path <code>d</code> string plus the natural <code>width</code>/<code>height</code> for the <code>viewBox</code>. Set <code>topKick</code> and/or <code>bottomKick</code> to <code>0</code> to drop a diagonal entirely. Drop the function into a React/Vue component or render it server-side.</p>
+</div>
+
+<script>
+const DEFAULTS = { bh:110, dt:125, db:65, tp:22, bp:78, er:14, ang:50, gd:1 };
+function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+
+/* ----- reusable, framework-agnostic generator ----- */
+function brandShapePath(opts){
+  const o = Object.assign({
+    width: 360,        // total horizontal extent (world units)
+    baseHeight: 110,   // height of the body at the left edge
+    topKick: 125,      // how far the TOP edge steps up (0 = flat top, no diagonal)
+    bottomKick: 65,    // how far the BOTTOM edge steps up (0 = flat bottom, no diagonal)
+    topKickPos: 22,    // % of width where the top kick is centered
+    bottomKickPos: 78, // % of width where the bottom kick is centered
+    radius: 14,        // corner radius
+    angle: 50          // angle of the diagonals, in degrees
+  }, opts);
+
+  const W = o.width;
+  const TAN = Math.tan(o.angle * Math.PI / 180);
+  const eps = 0.5;
+  const dT = Math.max(0, o.topKick), dB = Math.max(0, o.bottomKick);
+
+  const T_low = 0, B_low = o.baseHeight;
+  const T_high = T_low - dT, B_high = B_low - dB;
+  const topRun = dT / TAN, botRun = dB / TAN;
+
+  const topC = clamp(o.topKickPos/100 * W, topRun/2, W - topRun/2);
+  const botC = clamp(o.bottomKickPos/100 * W, botRun/2, W - botRun/2);
+  const xTs = topC - topRun/2, xTe = topC + topRun/2;
+  const xBs = botC - botRun/2, xBe = botC + botRun/2;
+
+  let pts = [];
+  pts.push([0, T_low]);
+  if (dT > eps){ pts.push([xTs, T_low]); pts.push([xTe, T_high]); }
+  pts.push([W, T_high]);
+  pts.push([W, B_high]);
+  if (dB > eps){ pts.push([xBe, B_high]); pts.push([xBs, B_low]); }
+  pts.push([0, B_low]);
+
+  const minY = Math.min.apply(null, pts.map(p => p[1]));
+  pts = pts.map(p => [p[0], p[1] - minY]);
+  const height = Math.max.apply(null, pts.map(p => p[1]));
+
+  const d = roundedPolyPath(pts, o.radius);
+  return { d, width: W, height, topCenter: topC, bottomCenter: botC };
+}
+
+// rounds every vertex of a closed polygon with quadratic beziers
+function roundedPolyPath(pts, r){
+  const n = pts.length;
+  const sub = (a,b) => [a[0]-b[0], a[1]-b[1]];
+  const len = v => Math.hypot(v[0], v[1]);
+  const P = (x,y) => x.toFixed(2)+','+y.toFixed(2);
+  const V = [];
+  for (let i=0;i<n;i++){
+    const prev = pts[(i-1+n)%n], cur = pts[i], next = pts[(i+1)%n];
+    const iv = sub(cur, prev), ov = sub(next, cur);
+    const il = len(iv)||1, ol = len(ov)||1;
+    const id = [iv[0]/il, iv[1]/il], od = [ov[0]/ol, ov[1]/ol];
+    const ri = Math.min(r, il/2, ol/2);
+    V.push({ cur, inP:[cur[0]-ri*id[0], cur[1]-ri*id[1]], outP:[cur[0]+ri*od[0], cur[1]+ri*od[1]] });
+  }
+  let d = 'M ' + P(V[0].outP[0], V[0].outP[1]);
+  for (let i=1;i<n;i++) d += ' L '+P(V[i].inP[0],V[i].inP[1])+' Q '+P(V[i].cur[0],V[i].cur[1])+' '+P(V[i].outP[0],V[i].outP[1]);
+  d += ' L '+P(V[0].inP[0],V[0].inP[1])+' Q '+P(V[0].cur[0],V[0].cur[1])+' '+P(V[0].outP[0],V[0].outP[1])+' Z';
+  return d;
+}
+/* -------------------------------------------------- */
+
+const ids = ['bh','dt','db','tp','bp','er','ang','gd'];
+
+const defs = `
+  <defs>
+    <linearGradient id="splose-widget-shape-gradient" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F1ECF4" />
+      <stop offset="100%" stop-color="#D7C3FF" />
+    </linearGradient>
+  </defs>
+`;
+
+function readControls(){
+  return { bh:+bh.value, dt:+dt.value, db:+db.value, tp:+tp.value, bp:+bp.value, er:+er.value, ang:+ang.value, gd:+gd.value };
+}
+function currentShape(c){
+  return brandShapePath({ width:360, baseHeight:c.bh, topKick:c.dt, bottomKick:c.db, topKickPos:c.tp, bottomKickPos:c.bp, radius:c.er, angle:c.ang });
+}
+
+function render(){
+  const c = readControls();
+  document.getElementById('bh-v').textContent = c.bh;
+  document.getElementById('dt-v').textContent = c.dt;
+  document.getElementById('db-v').textContent = c.db;
+  document.getElementById('tp-v').textContent = c.tp + '%';
+  document.getElementById('bp-v').textContent = c.bp + '%';
+  document.getElementById('er-v').textContent = c.er;
+  document.getElementById('ang-v').textContent = c.ang + '\u00b0';
+  document.getElementById('gd-v').textContent = c.gd ? 'on' : 'off';
+
+  const sh = currentShape(c);
+  const pad = 20;
+  const svg = document.getElementById('svg');
+  svg.setAttribute('viewBox', (-pad)+' '+(-pad)+' '+(sh.width + pad*2)+' '+(sh.height + pad*2));
+
+  let inner = '<path class="splose-widget-shape" d="'+sh.d+'" />';
+  if (c.gd){
+    if (c.dt > 0.5) inner += '<line x1="'+sh.topCenter.toFixed(1)+'" y1="-6" x2="'+sh.topCenter.toFixed(1)+'" y2="'+(sh.height+6)+'" stroke="#fff" stroke-width="1.2" stroke-dasharray="4,4" stroke-opacity="0.55"/>';
+    if (c.db > 0.5) inner += '<line x1="'+sh.bottomCenter.toFixed(1)+'" y1="-6" x2="'+sh.bottomCenter.toFixed(1)+'" y2="'+(sh.height+6)+'" stroke="#fff" stroke-width="1.2" stroke-dasharray="4,4" stroke-opacity="0.55"/>';
+  }
+  svg.innerHTML = defs + inner;
+
+  const rightH = c.bh + c.dt - c.db;
+  document.getElementById('readout').innerHTML =
+    'left edge <b>'+c.bh+'</b> &nbsp;&middot;&nbsp; right edge <b>'+rightH+'</b> &nbsp;&middot;&nbsp; tallest <b>'+Math.round(sh.height)+'</b>';
+
+  document.getElementById('fn-src').textContent = brandShapePath.toString() + '\n\n' + roundedPolyPath.toString();
+}
+
+function fullSVGString(){
+  const sh = currentShape(readControls());
+  const pad = 20;
+  const vb = (-pad)+' '+(-pad)+' '+(sh.width + pad*2)+' '+(sh.height + pad*2);
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+vb+'" width="100%">\n  <path class="splose-widget-shape" d="'+sh.d+'" />\n</svg>';
+}
+function copy(text, btn){
+  navigator.clipboard.writeText(text).then(() => { const o = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = o, 1200); });
+}
+
+ids.forEach(id => document.getElementById(id).addEventListener('input', render));
+document.getElementById('copy-d').addEventListener('click', e => copy(currentShape(readControls()).d, e.target));
+document.getElementById('copy-svg').addEventListener('click', e => copy(fullSVGString(), e.target));
+document.getElementById('copy-fn').addEventListener('click', e => copy(brandShapePath.toString() + '\n\n' + roundedPolyPath.toString(), e.target));
+document.getElementById('reset').addEventListener('click', () => { ids.forEach(id => document.getElementById(id).value = DEFAULTS[id]); render(); });
+
+render();
+</script>
+</body>
+</html>
