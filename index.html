@@ -26,8 +26,10 @@
   header p { margin: 0; color: var(--muted); font-size: 15px; max-width: 62ch; }
   .layout { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 28px; align-items: start; }
   @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+  /* the stage contains the SVG itself */
   .stage { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); min-height: 420px; display: flex; align-items: center; justify-content: center; padding: 32px; }
   .stage svg { width: 100%; height: auto; max-height: 460px; display: block; }
+  /* the panel contains the controls */
   .panel { font-size: 13px; }
   .group-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); margin: 18px 0 10px; }
   .group-label:first-child { margin-top: 0; }
@@ -43,6 +45,7 @@
   button:active { transform: scale(.98); }
   button.primary { background: var(--brand-deep); color: #fff; border-color: var(--brand-deep); }
   button.primary:hover { background: #322b73; }
+  /* the code block displays the reusable function */
   .code-block { margin-top: 36px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   .code-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
   .code-head h2 { font-size: 14px; font-weight: 600; margin: 0; }
@@ -99,15 +102,19 @@
     <pre id="fn-src"></pre>
   </div>
 
-  <p class="hint">Call <code>brandShapePath(opts)</code> for the path <code>d</code> string plus the natural <code>width</code>/<code>height</code> for the <code>viewBox</code>. Set <code>topKick</code> and/or <code>bottomKick</code> to <code>0</code> to drop a diagonal entirely. Drop the function into a React/Vue component or render it server-side.</p>
+  <p class="hint">Call <code>sploseShapePath(opts)</code> for the path <code>d</code> string plus the natural <code>width</code>/<code>height</code> for the <code>viewBox</code>. Set <code>topKick</code> and/or <code>bottomKick</code> to <code>0</code> to drop a diagonal entirely. Drop the function into a React/Vue component or render it server-side.</p>
 </div>
 
 <script>
 const DEFAULTS = { bh:110, dt:125, db:65, tp:22, bp:78, er:14, ang:50, gd:1 };
-function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); } // clamp a value between a and b
 
 /* ----- reusable, framework-agnostic generator ----- */
-function brandShapePath(opts){
+
+/**
+ * Generate the path data for the splose widget shape.
+ */
+function sploseShapePath(opts){
   const o = Object.assign({
     width: 360,        // total horizontal extent (world units)
     baseHeight: 110,   // height of the body at the left edge
@@ -149,7 +156,9 @@ function brandShapePath(opts){
   return { d, width: W, height, topCenter: topC, bottomCenter: botC };
 }
 
-// rounds every vertex of a closed polygon with quadratic beziers
+/** 
+ * Rounds every vertex of a closed polygon with quadratic beziers.
+ */
 function roundedPolyPath(pts, r){
   const n = pts.length;
   const sub = (a,b) => [a[0]-b[0], a[1]-b[1]];
@@ -172,6 +181,7 @@ function roundedPolyPath(pts, r){
 /* -------------------------------------------------- */
 
 const ids = ['bh','dt','db','tp','bp','er','ang','gd'];
+const svgClassName = "splose-widget-shape";
 
 const defs = `
   <defs>
@@ -186,9 +196,12 @@ function readControls(){
   return { bh:+bh.value, dt:+dt.value, db:+db.value, tp:+tp.value, bp:+bp.value, er:+er.value, ang:+ang.value, gd:+gd.value };
 }
 function currentShape(c){
-  return brandShapePath({ width:360, baseHeight:c.bh, topKick:c.dt, bottomKick:c.db, topKickPos:c.tp, bottomKickPos:c.bp, radius:c.er, angle:c.ang });
+  return sploseShapePath({ width:360, baseHeight:c.bh, topKick:c.dt, bottomKick:c.db, topKickPos:c.tp, bottomKickPos:c.bp, radius:c.er, angle:c.ang });
 }
 
+/**
+ * Render the current shape to the SVG element.
+ */
 function render(){
   const c = readControls();
   document.getElementById('bh-v').textContent = c.bh;
@@ -205,34 +218,50 @@ function render(){
   const svg = document.getElementById('svg');
   svg.setAttribute('viewBox', (-pad)+' '+(-pad)+' '+(sh.width + pad*2)+' '+(sh.height + pad*2));
 
-  let inner = '<path class="splose-widget-shape" d="'+sh.d+'" />';
+  let inner = '<path class="'+svgClassName+'" d="'+sh.d+'" />';
   if (c.gd){
     if (c.dt > 0.5) inner += '<line x1="'+sh.topCenter.toFixed(1)+'" y1="-6" x2="'+sh.topCenter.toFixed(1)+'" y2="'+(sh.height+6)+'" stroke="#fff" stroke-width="1.2" stroke-dasharray="4,4" stroke-opacity="0.55"/>';
     if (c.db > 0.5) inner += '<line x1="'+sh.bottomCenter.toFixed(1)+'" y1="-6" x2="'+sh.bottomCenter.toFixed(1)+'" y2="'+(sh.height+6)+'" stroke="#fff" stroke-width="1.2" stroke-dasharray="4,4" stroke-opacity="0.55"/>';
   }
+
+  // prepend the style defs to the inner path:
   svg.innerHTML = defs + inner;
 
+  // Stats box that shows the height of the left and right edges, and the tallest point.
   const rightH = c.bh + c.dt - c.db;
   document.getElementById('readout').innerHTML =
     'left edge <b>'+c.bh+'</b> &nbsp;&middot;&nbsp; right edge <b>'+rightH+'</b> &nbsp;&middot;&nbsp; tallest <b>'+Math.round(sh.height)+'</b>';
 
-  document.getElementById('fn-src').textContent = brandShapePath.toString() + '\n\n' + roundedPolyPath.toString();
+  // Code block that shows the reusable function.
+  document.getElementById('fn-src').textContent = sploseShapePath.toString() + '\n\n' + roundedPolyPath.toString();
 }
 
+/**
+ * Return the full SVG string for the current shape.
+ */
 function fullSVGString(){
   const sh = currentShape(readControls());
   const pad = 20;
   const vb = (-pad)+' '+(-pad)+' '+(sh.width + pad*2)+' '+(sh.height + pad*2);
-  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+vb+'" width="100%">\n  <path class="splose-widget-shape" d="'+sh.d+'" />\n</svg>';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+vb+'" width="100%">\n  <path class="'+svgClassName+'" d="'+sh.d+'" />\n</svg>';
 }
+
+/**
+ * Copy the given text to the clipboard (just for this demo).
+ */
 function copy(text, btn){
   navigator.clipboard.writeText(text).then(() => { const o = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = o, 1200); });
 }
 
+// Input listeners for all of the input controls - fires the render function on each input change.
 ids.forEach(id => document.getElementById(id).addEventListener('input', render));
+
+/**
+ * Click listeners for the copy buttons.
+ */
 document.getElementById('copy-d').addEventListener('click', e => copy(currentShape(readControls()).d, e.target));
 document.getElementById('copy-svg').addEventListener('click', e => copy(fullSVGString(), e.target));
-document.getElementById('copy-fn').addEventListener('click', e => copy(brandShapePath.toString() + '\n\n' + roundedPolyPath.toString(), e.target));
+document.getElementById('copy-fn').addEventListener('click', e => copy(sploseShapePath.toString() + '\n\n' + roundedPolyPath.toString(), e.target));
 document.getElementById('reset').addEventListener('click', () => { ids.forEach(id => document.getElementById(id).value = DEFAULTS[id]); render(); });
 
 render();
