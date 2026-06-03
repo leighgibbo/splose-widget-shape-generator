@@ -69,10 +69,10 @@
 
     <div class="panel">
       <div class="group-label">Body</div>
-      <div class="row"><label>Base height</label><input type="range" id="bh" min="60" max="240" step="1" value="110"><span class="val" id="bh-v"></span></div>
+      <div class="row"><label>Total height</label><input type="range" id="bh" min="60" max="320" step="1" value="220"><span class="val" id="bh-v"></span></div>
 
       <div class="group-label">Top kick</div>
-      <div class="row"><label>Amount</label><input type="range" id="dt" min="0" max="200" step="1" value="125"><span class="val" id="dt-v"></span></div>
+      <div class="row"><label>Amount</label><input type="range" id="dt" min="0" max="260" step="1" value="100"><span class="val" id="dt-v"></span></div>
       <div class="row"><label>Position</label><input type="range" id="tp" min="5" max="95" step="1" value="22"><span class="val" id="tp-v"></span></div>
 
       <div class="group-label">Bottom kick</div>
@@ -106,7 +106,7 @@
 </div>
 
 <script>
-const DEFAULTS = { bh:110, dt:125, db:65, tp:22, bp:78, er:14, ang:50, gd:1 };
+const DEFAULTS = { bh:220, dt:100, db:65, tp:22, bp:78, er:14, ang:50, gd:1 };
 function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); } // clamp a value between a and b
 
 /* ----- reusable, framework-agnostic generator ----- */
@@ -117,8 +117,8 @@ function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); } // clamp a value be
 function sploseShapePath(opts){
   const o = Object.assign({
     width: 360,        // total horizontal extent (world units)
-    baseHeight: 110,   // height of the body at the left edge
-    topKick: 125,      // how far the TOP edge steps up (0 = flat top, no diagonal)
+    baseHeight: 220,   // fixed total height of the shape
+    topKick: 100,      // how far the top-left edge drops below the top; 0 = flat top
     bottomKick: 65,    // how far the BOTTOM edge steps up (0 = flat bottom, no diagonal)
     topKickPos: 22,    // % of width where the top kick is centered
     bottomKickPos: 78, // % of width where the bottom kick is centered
@@ -129,10 +129,11 @@ function sploseShapePath(opts){
   const W = o.width;
   const TAN = Math.tan(o.angle * Math.PI / 180);
   const eps = 0.5;
-  const dT = Math.max(0, o.topKick), dB = Math.max(0, o.bottomKick);
+  // top-right is always the tallest point (y=0); top-left drops down by dT
+  const dT = clamp(Math.max(0, o.topKick), 0, o.baseHeight), dB = Math.max(0, o.bottomKick);
 
-  const T_low = 0, B_low = o.baseHeight;
-  const T_high = T_low - dT, B_high = B_low - dB;
+  const T_high = 0, T_low = dT;
+  const B_low = o.baseHeight, B_high = B_low - dB;
   const topRun = dT / TAN, botRun = dB / TAN;
 
   const topC = clamp(o.topKickPos/100 * W, topRun/2, W - topRun/2);
@@ -227,10 +228,10 @@ function render(){
   // prepend the style defs to the inner path:
   svg.innerHTML = defs + inner;
 
-  // Stats box that shows the height of the left and right edges, and the tallest point.
-  const rightH = c.bh + c.dt - c.db;
+  // Stats box that shows the height of the left and right edges, and the fixed total height.
+  const leftH = c.bh - c.dt, rightH = c.bh - c.db;
   document.getElementById('readout').innerHTML =
-    'left edge <b>'+c.bh+'</b> &nbsp;&middot;&nbsp; right edge <b>'+rightH+'</b> &nbsp;&middot;&nbsp; tallest <b>'+Math.round(sh.height)+'</b>';
+    'left edge <b>'+leftH+'</b> &nbsp;&middot;&nbsp; right edge <b>'+rightH+'</b> &nbsp;&middot;&nbsp; total <b>'+c.bh+'</b>';
 
   // Code block that shows the reusable function.
   document.getElementById('fn-src').textContent = sploseShapePath.toString() + '\n\n' + roundedPolyPath.toString();

@@ -32,8 +32,9 @@ only and never bends the straight runs.
   The horizontal run of a kick is derived, never set directly:
   `run = kickAmount / tan(angle)`. Changing the kick height changes the run so
   the angle is preserved.
-- **Top-edge alignment.** All measurements are taken from a common top reference.
-  Heights grow downward; kicks raise an edge by moving it *up* (toward smaller y).
+- **Top-edge alignment.** The top-right corner is always at y=0 (the tallest point).
+  The top-left corner sits at y=topKick — it drops *down* from the top-right by the kick
+  amount. Increasing `topKick` deepens the step without changing total height.
 - **Horizontal offsets only.** Kick positions are expressed as a percentage of
   total width (`topKickPos`, `bottomKickPos`), i.e. where along the x-axis each
   diagonal is centered. The bridge travels horizontally, not vertically.
@@ -56,8 +57,8 @@ Returns the SVG path `d` string plus the natural dimensions to feed the `viewBox
 | option          | default | meaning                                                        |
 |-----------------|---------|----------------------------------------------------------------|
 | `width`         | 360     | total horizontal extent in world units                         |
-| `baseHeight`    | 110     | body height at the left edge                                   |
-| `topKick`       | 125     | how far the top edge steps up; `0` = flat top, no diagonal     |
+| `baseHeight`    | 220     | fixed total height of the shape (top-right to bottom-left)     |
+| `topKick`       | 100     | how far the top-left edge drops below the top-right; `0` = flat top |
 | `bottomKick`    | 65      | how far the bottom edge steps up; `0` = flat bottom            |
 | `topKickPos`    | 22      | % of width where the top kick is centered                      |
 | `bottomKickPos` | 78      | % of width where the bottom kick is centered                   |
@@ -69,8 +70,9 @@ each kick — handy for drawing guides or aligning other elements.
 
 The polygon is assembled top-edge-first, clockwise: top-left → (optional top kick
 vertices) → top-right → right edge down → (optional bottom kick vertices) →
-bottom-left → close. After building, the whole point set is shifted so the
-tallest point sits at `y = 0` and `height` reports the full extent.
+bottom-left → close. The top-right corner is always at y=0; `height` always equals
+`baseHeight` regardless of kick values. `topKick` is clamped to `[0, baseHeight]`
+so the top-left vertex can never fall below the bottom edge.
 
 ### `roundedPolyPath(pts, r) → string`
 
